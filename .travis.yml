@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t larsito/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true larsito/react-test npm test
+
+after_success:
+  - docker build -t larsito/multi-client ./client
+  - docker build -t larsito/multi-nginx ./nginx
+  - docker build -t larsito/multi-server ./server
+  - docker build -t larsito/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push larsito/multi-client
+  - docker push larsito/multi-nginx
+  - docker push larsito/multi-server
+  - docker push larsito/multi-worker
